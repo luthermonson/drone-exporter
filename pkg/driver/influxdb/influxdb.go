@@ -5,41 +5,35 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/jlehtimaki/drone-exporter/pkg/drone"
-
 	client "github.com/influxdata/influxdb1-client/v2"
-	"github.com/jlehtimaki/drone-exporter/pkg/env"
+	"github.com/jlehtimaki/drone-exporter/pkg/drone"
+	"github.com/jlehtimaki/drone-exporter/pkg/exporter"
 	"github.com/jlehtimaki/drone-exporter/pkg/types"
-)
-
-var (
-	influxAddress = env.GetEnv("INFLUXDB_ADDRESS", "http://influxdb:8086")
-	database      = env.GetEnv("INFLUXDB_DATABASE", "example")
-	username      = env.GetEnv("INFLUXDB_USERNAME", "foo")
-	password      = env.GetEnv("INFLUXDB_PASSWORD", "bar")
 )
 
 const LastBuildIdQueryFmt = `SELECT last("BuildId") AS "last_id" FROM "%s"."autogen"."builds" WHERE "Slug"='%s' AND "DroneAddress"='%s'`
 
 type driver struct {
-	client client.Client
+	client   client.Client
+	database string
 }
 
-func NewDriver() (*driver, error) {
-	client, err := getClient()
+func NewDriver(config *exporter.Config) (*driver, error) {
+	client, err := getClient(config)
 	if err != nil {
 		return nil, err
 	}
 	return &driver{
-		client: client,
+		client:   client,
+		database: config.InfluxDB.Database,
 	}, nil
 }
 
-func getClient() (client.Client, error) {
+func getClient(config *exporter.Config) (client.Client, error) {
 	c, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     influxAddress,
-		Username: username,
-		Password: password,
+		Addr:     config.InfluxDB.Address,
+		Username: config.InfluxDB.Username,
+		Password: config.InfluxDB.Password,
 	})
 
 	if err != nil {
@@ -54,7 +48,7 @@ func (d *driver) Close() error {
 }
 
 func (d *driver) LastBuildNumber(slug string) int64 {
-	q := client.NewQuery(fmt.Sprintf(LastBuildIdQueryFmt, database, slug, drone.GetHost()), database, "s")
+	q := client.NewQuery(fmt.Sprintf(LastBuildIdQueryFmt, driver.database, slug, drone.GetHost()), driver.database, "s")
 	response, err := d.client.Query(q)
 	if err != nil {
 		return 0
@@ -82,7 +76,7 @@ func (d *driver) Batch(points []types.Point) error {
 	var err error
 
 	bp, err = client.NewBatchPoints(client.BatchPointsConfig{
-		Database:  database,
+		Database:  driver.database,
 		Precision: "s",
 	})
 	if err != nil {
@@ -107,7 +101,7 @@ func (d *driver) Batch(points []types.Point) error {
 				return err
 			}
 			bp, err = client.NewBatchPoints(client.BatchPointsConfig{
-				Database:  database,
+				Database:  driver.database,
 				Precision: "s",
 			})
 			if err != nil {

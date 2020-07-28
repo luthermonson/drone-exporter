@@ -7,5 +7,8 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d
 	github.com/sirupsen/logrus v1.4.2
+	github.com/t-tomalak/logrus-easy-formatter v0.0.0-20190827215021-c074f06c5816
+	github.com/urfave/cli/v2 v2.2.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	gopkg.in/yaml.v2 v2.2.2
 )
