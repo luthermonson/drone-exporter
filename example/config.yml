@@ -1,0 +1,18 @@
+exporter:
+  threads: 4 #how many repos to process at one time
+  interval: 15 #interval in minutes to wait between runs
+  driver: influxdb #influxdb only supporter for now
+influxdb:
+  address: https://myinfludx.server.io
+  database: influxdb-database
+  username: influxdb-username
+  password: influxdb-password
+drone:
+  url: https://mydrone.server.io
+  token:
+
+# optional, default behavior is to pull the user's repos and process those
+# in the event you have a service account not attached to repos but can process data
+# you will want to pass in a repos list
+repos:
+  - "my-org/repository"
